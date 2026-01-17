@@ -1,138 +1,403 @@
-# Commands
-View database npx prisma studio --config ./prisma.config.ts
+# InstaCredit - Loan Management System
 
-# Turborepo starter
+A real-time loan management and tracking system that integrates with external lender APIs to monitor loan status changes and provide a comprehensive dashboard for viewing loan information.
 
-This Turborepo starter is maintained by the Turborepo core team.
+## 🏗️ Architecture
 
-## Using this example
+### System Overview
 
-Run the following command:
-
-```sh
-npx create-turbo@latest
-```
-
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+InstaCredit is built as a microservices architecture using a monorepo structure managed by Turborepo. The system consists of three main services:
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+┌─────────────────┐         ┌──────────────────┐         ┌─────────────────┐
+│                 │         │                  │         │                 │
+│    Frontend     │────────▶│  Main Backend    │────────▶│  Fake Lender    │
+│   (React +      │         │  (Express +      │         │     API         │
+│    Vite)        │         │   Prisma)        │         │   (FastAPI)     │
+│                 │         │                  │         │                 │
+└─────────────────┘         └──────────────────┘         └─────────────────┘
+                                     │
+                                     ▼
+                            ┌─────────────────┐
+                            │   PostgreSQL    │
+                            │    Database     │
+                            └─────────────────┘
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### Components
+
+#### 1. **Frontend** (`apps/frontend`)
+
+- **Technology**: React 19, Vite, TypeScript, TailwindCSS
+- **Features**:
+  - Real-time loan dashboard with auto-refresh
+  - Interactive loan table with expandable rows
+  - Status timeline visualization showing loan progression
+  - Search and filter capabilities (by Loan ID, User ID, Amount, Status)
+  - Responsive UI with shadcn/ui components
+- **Key Libraries**:
+  - Axios for API calls
+  - Lucide React for icons
+  - Radix UI for accessible components
+  - Sonner for toast notifications
+
+#### 2. **Main Backend** (`apps/main-backend`)
+
+- **Technology**: Node.js, Express, TypeScript, Prisma ORM
+- **Features**:
+  - RESTful API for loan data retrieval
+  - Cron job polling lender API every 10 seconds
+  - Automatic loan creation and status tracking
+  - Database migrations and schema management
+  - Error handling and logging with Winston
+  - Rate limiting and security middleware
+- **Key Libraries**:
+  - Express for API server
+  - Prisma for database ORM
+  - node-cron for scheduled tasks
+  - Helmet for security headers
+  - express-rate-limit for API protection
+
+#### 3. **Fake Lender API** (`apps/fake-lender-api`)
+
+- **Technology**: Python, FastAPI
+- **Features**:
+  - Mock lender service simulating real-world API
+  - Time-based loan status progression (every 5 seconds)
+  - Multiple loan support (LN101, LN102)
+  - Status cycle: Applied → Approved → Disbursed → Rejected → Applied
+  - CORS enabled for cross-origin requests
+- **Purpose**: Simulates an external lender's API for testing and development
+
+#### 4. **Database**
+
+- **Technology**: PostgreSQL 15
+- **Schema**:
+  - `User`: User information
+  - `Loans`: Loan details with relationships to users
+  - `LoanStatusHistory`: Complete audit trail of status changes
+- **Features**: Indexed queries, relationships, enums for loan status
+
+## 🚀 Setup Instructions
+
+### Prerequisites
+
+- **Node.js** >= 18.x
+- **npm** >= 11.6.4
+- **Docker** and **Docker Compose** (for containerized setup)
+- **Python** 3.11+ (if running fake-lender-api locally)
+
+### Option 1: Docker Setup (Recommended)
+
+1. **Clone the repository**
+
+   ```bash
+   git clone <repository-url>
+   cd instacr
+   ```
+
+2. **Set up environment variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Update the `.env` file with your configuration:
+
+   ```env
+   # Logging
+   CONSOLE_ONLY_LOGGING=true
+   LOG_LEVEL=debug
+
+   # Database
+   POSTGRES_DB=db
+   POSTGRES_USER=user
+   POSTGRES_PASSWORD=password
+   DATABASE_URL="postgresql://user:password@database:5432/db"
+
+   # Lender API
+   LENDER_API_URL="http://fake-lender-api:8001/api/lender/loan-status"
+
+   # Server
+   PORT=8000
+   NODE_ENV=production
+   ```
+
+3. **Build and start all services**
+
+   ```bash
+   docker compose up --build
+   ```
+
+4. **Access the application**
+   - Frontend: http://localhost:5173
+   - Main Backend: http://localhost:8000
+   - Fake Lender API: http://localhost:8001
+   - Database: localhost:5432
+
+### Option 2: Local Development Setup
+
+1. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+2. **Set up environment variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Update the `.env` file for local development:
+
+   ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/db"
+   LENDER_API_URL="http://localhost:8001/api/lender/loan-status"
+   PORT=8000
+   NODE_ENV=development
+   ```
+
+3. **Start PostgreSQL database**
+
+   ```bash
+   docker compose up database -d
+   ```
+
+4. **Set up the database schema**
+
+   ```bash
+   cd apps/main-backend
+   npm run reset-db
+   # or
+   npx prisma migrate dev
+   ```
+
+5. **Start the fake lender API**
+
+   ```bash
+   cd apps/fake-lender-api
+   pip install -r requirements.txt
+   python main.py
+   ```
+
+6. **Start the main backend**
+
+   ```bash
+   cd apps/main-backend
+   npm run dev
+   ```
+
+7. **Start the frontend**
+   ```bash
+   cd apps/frontend
+   npm run dev
+   ```
+
+### Development Commands
+
+```bash
+# Install dependencies for all apps
+npm install
+
+# Run all apps in development mode
+npm run dev
+
+# Build all apps
+npm run build
+
+# Format code
+npm run format
+
+# Type checking
+npm run check-types
+
+# Docker commands
+npm run docker:create    # Create and start all containers
+npm run docker:start     # Start existing containers
+npm run docker:stop      # Stop containers
+```
+
+### Backend-Specific Commands
+
+```bash
+cd apps/main-backend
+
+# Reset database (drops all data and re-runs migrations)
+npm run reset-db
+
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# Open Prisma Studio (database GUI)
+npx prisma studio
+```
+
+## 📁 Project Structure
 
 ```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+instacr/
+├── apps/
+│   ├── fake-lender-api/          # Python FastAPI mock lender
+│   │   ├── Dockerfile
+│   │   ├── main.py               # API endpoints and status simulation
+│   │   └── requirements.txt
+│   │
+│   ├── frontend/                 # React frontend
+│   │   ├── src/
+│   │   │   ├── components/       # UI components
+│   │   │   │   ├── Home.tsx
+│   │   │   │   ├── LoansTable.tsx
+│   │   │   │   ├── StatusTimeline.tsx
+│   │   │   │   └── ui/           # shadcn/ui components
+│   │   │   ├── api/              # API client
+│   │   │   ├── types/            # TypeScript types
+│   │   │   └── lib/              # Utilities
+│   │   ├── vite.config.ts
+│   │   └── package.json
+│   │
+│   └── main-backend/             # Express backend
+│       ├── config/               # Configuration files
+│       ├── controllers/          # Business logic
+│       ├── cron/                 # Scheduled jobs
+│       │   └── call-lender.ts    # Lender API polling
+│       ├── handlers/             # Request handlers
+│       ├── middlewares/          # Express middlewares
+│       ├── routes/               # API routes
+│       ├── prisma/
+│       │   ├── schema.prisma     # Database schema
+│       │   └── migrations/       # Migration files
+│       ├── server.ts             # Entry point
+│       └── package.json
+│
+├── docker-compose.yml            # Container orchestration
+├── turbo.json                    # Turborepo configuration
+└── package.json                  # Root package.json
 ```
 
-### Develop
+## 🔄 Data Flow
 
-To develop all apps and packages, run the following command:
+1. **Cron Job Polling** (Every 10 seconds)
 
-```
-cd my-turborepo
+   ```
+   Main Backend → Fake Lender API → Get loan statuses
+   ```
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+2. **Status Processing**
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+   ```
+   Main Backend receives loan data → Check if loan exists
+   → If new: Create user, loan, and initial status
+   → If exists: Compare status, update if changed
+   → Save to PostgreSQL
+   ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+3. **Frontend Updates**
+   ```
+   Frontend → Main Backend API → Fetch all loans with status history
+   → Display in table with timeline visualization
+   ```
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+## 🔍 Key Features
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+### Real-Time Status Tracking
 
-### Remote Caching
+- Cron job polls lender API every 10 seconds
+- Automatic detection and storage of status changes
+- Complete audit trail of all status transitions
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+### Interactive Dashboard
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+- Expandable loan rows showing detailed status timeline
+- Visual timeline with color-coded status indicators
+- Latest status highlighted in green
+- Search by Loan ID, User ID, or Amount
+- Filter by loan status (Applied, Approved, Disbursed, Rejected)
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+### Database Schema
 
-```
-cd my-turborepo
+```prisma
+User
+├── userId (unique)
+└── loans (relation)
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+Loans
+├── loanId (unique)
+├── userId (foreign key)
+├── approvedAmount
+└── statusHistory (relation)
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+LoanStatusHistory
+├── id (unique)
+├── loanId (foreign key)
+├── status (enum)
+└── changedAt (timestamp)
 ```
 
-## Useful Links
+## 🛠️ Technology Stack
 
-Learn more about the power of Turborepo:
+| Layer            | Technology                              |
+| ---------------- | --------------------------------------- |
+| Frontend         | React 19, TypeScript, Vite, TailwindCSS |
+| Backend          | Node.js, Express, TypeScript            |
+| Database         | PostgreSQL 15                           |
+| ORM              | Prisma                                  |
+| Mock Service     | Python, FastAPI                         |
+| Containerization | Docker, Docker Compose                  |
+| Build Tool       | Turborepo                               |
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+## 🔐 Security Features
+
+- Helmet.js for security headers
+- CORS configuration
+- Rate limiting on API endpoints
+- Environment variable management
+- Input validation with Prisma
+- Error handling middleware
+
+## 📊 API Endpoints
+
+### Main Backend (`http://localhost:8000`)
+
+- **GET** `/api/loans/all-loans` - Get all loans with status history
+  - Rate limited
+  - Returns loans sorted by creation date (descending)
+  - Includes full status history for each loan
+
+- **GET** `/health` - Health check endpoint
+
+### Fake Lender API (`http://localhost:8001`)
+
+- **GET** `/` - Health check
+- **GET** `/api/lender/loan-status` - Get current loan statuses
+  - Returns array of loan objects with current status
+  - Status changes automatically every 5 seconds
+
+## 🧪 Testing & Development
+
+The fake lender API cycles through statuses automatically:
+
+- **Applied** → **Approved** → **Disbursed** → **Rejected** → (repeat)
+- Status changes every 5 seconds
+- Two test loans available:
+  - LN101 (User: U12, Amount: ₹50,000)
+  - LN102 (User: U13, Amount: ₹10,000)
+
+## 📝 Logging
+
+- Winston logger with configurable log levels
+- Console and file logging support
+- Error tracking with stack traces
+- Request/response logging
+
+## 🐳 Docker Services
+
+- **database**: PostgreSQL 15 with health checks
+- **main-backend**: Express server with dependency on database and lender API
+- **fake-lender-api**: FastAPI mock service
+- All services connected via Docker networks for communication
+- Volume persistence for database data
+
