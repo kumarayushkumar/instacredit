@@ -5,7 +5,6 @@ import express from 'express'
 import helmet from 'helmet'
 import http from 'http'
 
-import { allowedDomains } from './config/cors.js'
 import { NODE_ENV, PORT } from './config/env.js'
 import { startLenderPollingCron } from './cron/call-lender.js'
 import logger from './lib/logger.js'
@@ -46,13 +45,7 @@ const serverConfig = () => {
 
 	app.use(
 		cors({
-			origin: (origin, callback) => {
-				if (!origin || allowedDomains.includes(origin)) {
-					callback(null, true)
-				} else {
-					callback(new Error('Not allowed by CORS'))
-				}
-			},
+			origin: true, // Allow all origins for debugging
 			credentials: true,
 			methods: 'GET, HEAD, PUT, PATCH, POST, DELETE',
 			allowedHeaders: 'Content-Type, Authorization'
@@ -67,7 +60,7 @@ const serverConfig = () => {
 
 	http.createServer(app).listen(PORT, () => {
 		console.log(
-			`express is listening at http://localhost:${PORT} environment:${NODE_ENV}`
+			`express is listening at http://localhost:${PORT} environment:${NODE_ENV} v:1`
 		)
 
 		// Start lender polling cron job

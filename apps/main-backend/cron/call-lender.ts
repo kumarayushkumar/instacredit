@@ -1,8 +1,10 @@
 import cron from 'node-cron'
-import { LoanStatus } from '../../generated/prisma/enums.js'
+
 import { LENDER_API_URL } from '../config/env.js'
 import { prisma } from '../config/prisma.js'
+
 import logger from '../lib/logger.js'
+import type { LoanStatus } from '../generated/prisma/enums.js'
 
 interface LenderLoanResponse {
 	loan_id: string
@@ -22,8 +24,7 @@ const processLoan = async (loanData: LenderLoanResponse) => {
 			where: { loanId: loan_id },
 			include: {
 				statusHistory: {
-					orderBy: { changedAt: 'desc' },
-					take: 1
+					orderBy: { changedAt: 'desc' }
 				}
 			}
 		})
@@ -57,15 +58,15 @@ const processLoan = async (loanData: LenderLoanResponse) => {
 				`Loan ${loan_id} created successfully with status: ${mappedStatus}`
 			)
 		} else {
-			// Loan exists, check if status has changed
-			const latestStatus = existingLoan.statusHistory[0]?.status
+			// Loan exists, check if status already exists in history
+			const statusExists = existingLoan.statusHistory.some(
+				(history: { status: string }) => history.status === mappedStatus
+			)
 
-			if (latestStatus !== mappedStatus) {
-				logger.info(
-					`Status changed for loan ${loan_id}: ${latestStatus} -> ${mappedStatus}`
-				)
+			if (!statusExists) {
+				// Status doesn't exist in history, insert it
+				logger.info(`New status for loan ${loan_id}: ${mappedStatus}`)
 
-				// Update loan and create status history
 				await prisma.loans.update({
 					where: { loanId: loan_id },
 					data: {
@@ -80,6 +81,11 @@ const processLoan = async (loanData: LenderLoanResponse) => {
 
 				logger.info(`Loan ${loan_id} status updated to: ${mappedStatus}`)
 			} else {
+				// Status already exists in history, skip insertion
+				logger.info(
+					`Status ${mappedStatus} already exists in history for loan ${loan_id}, skipping insertion`
+				)
+
 				// Status unchanged, optionally update approved amount if changed
 				if (
 					approved_amount &&

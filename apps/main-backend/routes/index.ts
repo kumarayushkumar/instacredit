@@ -1,9 +1,9 @@
 import { Router } from 'express'
 
 import { HTTP_STATUS_CODE } from '../lib/constants.js'
+import logger from '../lib/logger.js'
 import { limiter } from '../middlewares/rate-limiter.js'
 import loanRouter from './loan.route.js'
-import logger from '../lib/logger.js'
 
 const router: Router = Router()
 
