@@ -1,10 +1,12 @@
-import Home from './components/Home'
+import Header from './components/Header'
+import Loan from './components/Loan'
 import { Toaster } from './components/ui/sonner'
 
 function App() {
 	return (
 		<>
-			<Home />
+			<Header />
+			<Loan />
 			<Toaster />
 		</>
 	)

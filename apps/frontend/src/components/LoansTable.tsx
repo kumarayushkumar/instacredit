@@ -23,7 +23,7 @@ export function LoansTable({ loans }: LoansTableProps) {
 	}
 
 	return (
-		<div className="rounded-md border">
+		<div className="rounded-md border mt-6">
 			<Table>
 				<TableHeader>
 					<TableRow>
@@ -64,10 +64,10 @@ export function LoansTable({ loans }: LoansTableProps) {
 								</TableRow>
 								{expandedLoanId === loan.loanId && (
 									<TableRow key={`${loan.loanId}-expanded`}>
-										<TableCell colSpan={5} className="bg-gray-50 p-6">
-											<div className="space-y-3">
+										<TableCell colSpan={5} className="bg-gray-100 px-10 py-4">
+											<div className="flex flex-col gap-4">
 												<h3 className="text-sm font-semibold text-gray-700">
-													Status History for {loan.loanId}
+													Status History
 												</h3>
 												<StatusTimeline statusHistory={loan.statusHistory} />
 											</div>
