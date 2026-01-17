@@ -1,0 +1,72 @@
+name: instacredit
+services:
+  database:
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U $POSTGRES_USER -d $POSTGRES_DB || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    image: postgres:15
+    container_name: database
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - '5432:5432'
+    volumes:
+      - database-data:/data/db
+    networks:
+      - database-network
+
+  main-backend:
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8000/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    build:
+      context: ./apps/main-backend
+      dockerfile: Dockerfile
+    container_name: main-backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - '8000:8000'
+    depends_on:
+      database:
+        condition: service_healthy
+      fake-lender-api:
+        condition: service_healthy
+    networks:
+      - database-network
+      - instacredit-network
+
+  fake-lender-api:
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8001/ || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    build:
+      context: ./apps/fake-lender-api
+      dockerfile: Dockerfile
+    container_name: fake-lender-api
+    restart: always
+    ports:
+      - '8001:8001'
+    networks:
+      - instacredit-network
+
+volumes:
+  database-data:
+
+networks:
+  database-network:
+  instacredit-network:

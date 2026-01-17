@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  userId    String   @unique
+  loans     Loans[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Loans {
+  loanId         String              @unique
+  userId         String
+  approvedAmount Float
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  user           User                @relation(fields: [userId], references: [userId])
+  statusHistory  LoanStatusHistory[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum LoanStatus {
+  APPLIED
+  APPROVED
+  DISBURSED
+  REJECTED
+}
+
+model LoanStatusHistory {
+  id        String     @id @default(cuid())
+  loanId    String
+  status    LoanStatus @default(APPLIED)
+  changedAt DateTime   @default(now())
+  loan      Loans      @relation(fields: [loanId], references: [loanId])
+
+  @@index([loanId])
+  @@index([status])
+  @@index([changedAt])
+}

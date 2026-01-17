@@ -1,3 +1,6 @@
+# Commands
+View database npx prisma studio --config ./prisma.config.ts
+
 # Turborepo starter
 
 This Turborepo starter is maintained by the Turborepo core team.

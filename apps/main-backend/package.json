@@ -1,0 +1,38 @@
+{
+	"name": "main-backend",
+	"version": "1.0.0",
+	"scripts": {
+		"build": "tsc",
+		"start": "node dist/server.js",
+		"dev": "tsx watch src/server.ts",
+		"format": "prettier --write \"**/*.{ts,tsx,md,astro}\"",
+		"reset-db": "NODE_ENV=development npx prisma migrate reset --force && npx prisma db push"
+	},
+	"license": "ISC",
+	"type": "module",
+	"devDependencies": {
+		"@types/compression": "^1.8.1",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/morgan": "^1.9.10",
+		"@types/node": "^25.0.9",
+		"@types/node-cron": "^3.0.11",
+		"prettier": "^3.8.0",
+		"prisma": "^7.2.0",
+		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"@prisma/adapter-pg": "^7.2.0",
+		"@prisma/client": "^7.2.0",
+		"compression": "^1.8.1",
+		"cors": "^2.8.5",
+		"dotenv": "^17.2.3",
+		"express": "^5.2.1",
+		"express-rate-limit": "^8.2.1",
+		"helmet": "^8.1.0",
+		"node-cron": "^4.2.1",
+		"node-fetch": "^3.3.2",
+		"omnilogs": "^1.1.0",
+		"winston": "^3.19.0"
+	}
+}
